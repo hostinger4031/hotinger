@@ -363,3 +363,66 @@ Inside `astra.zip` — confirmed state:
 
 **Current Status: Awaiting "Start Phase 1" approval.**  
 **No code has been changed. Everything above is planning only.**
+
+---
+
+# PHASE 1A — COMPLETED
+**Commit:** `fix-phase-1a-safe-baseline`  
+**Commit SHA:** `801c6d04ff680bf97f7b9ed2883aa3f435e0c8e0`  
+**Date:** 2026-09-05  
+**Status:** ✅ Merged to main — awaiting live site verification
+
+## Changes Made (Exactly 4)
+
+### ✅ 1.A.1 — Created `assets/css/medicare-custom.css`
+- **File:** `assets/css/medicare-custom.css` (new, 0 bytes, empty)
+- **Why:** `functions.php:249` enqueues this file; its absence caused a 404 on every front-page load and prevented `mc_vars` from being injected via `wp_localize_script`
+- **Risk:** Zero — new file only, nothing removed or modified
+
+### ✅ 1.A.2 — Created `assets/js/medicare-custom.js`
+- **File:** `assets/js/medicare-custom.js` (new, 0 bytes, empty)
+- **Why:** `functions.php:260` enqueues this file as the `mc-custom-js` handle, which is the anchor for `wp_localize_script('mc-custom-js', 'mc_vars', [...])`. Without this file, `mc_vars` was never available in JS.
+- **Risk:** Zero — new file only
+
+### ✅ 1.A.3 — Removed `user-scalable=no` from viewport meta (`header.php:30`)
+- **Before:** `<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">`
+- **After:** `<meta name="viewport" content="width=device-width, initial-scale=1.0">`
+- **Why:** `user-scalable=no` prevents pinch-to-zoom on mobile — accessibility violation
+- **Risk:** Zero — standalone HTML meta tag, no PHP/JS/CSS dependency
+
+### ✅ 1.A.4 — Fixed `mcShowToast` → `mcpShowToast` in `functions.php` (2 locations)
+- **Location 1 — `functions.php:435`** (prescription upload notice):
+  - Before: `mcShowToast(` → After: `mcpShowToast(`
+- **Location 2 — `functions.php:517`** (WC added_to_cart feedback):
+  - Before: `mcShowToast(` → After: `mcpShowToast(`
+- **Why:** `mcShowToast` is undefined everywhere; `mcpShowToast` is the correct globally-defined function (`header.php:1631`)
+- **Risk:** Low — these events were previously silently failing; now they will work correctly when triggered
+
+## Files Changed
+| File | Change Type | Lines Affected |
+|---|---|---|
+| `assets/css/medicare-custom.css` | Created (empty) | — |
+| `assets/js/medicare-custom.js` | Created (empty) | — |
+| `header.php` | Modified | Line 30 |
+| `functions.php` | Modified | Lines 435, 517 |
+
+## Files NOT Touched
+`footer.php`, `template-medicare-homepage-safe.php`, `style.css`, all Astra core files, `inc/`, `admin/`, all other `assets/`
+
+## Updated Bug Status
+| Bug ID | Description | Status |
+|---|---|---|
+| P0-1 | `medicare-custom.css` + `.js` missing | ✅ FIXED |
+| P1-1 | `mcShowToast` undefined | ✅ FIXED |
+| C1 | `user-scalable=no` viewport | ✅ FIXED |
+| All others | — | ❌ Pending |
+
+## Tests to Run on Live Website
+1. **Network tab (DevTools):** Open homepage → verify NO 404 for `medicare-custom.css` or `medicare-custom.js`
+2. **Console (DevTools):** Verify NO `ReferenceError: mcShowToast is not defined`
+3. **Console (DevTools):** Verify `mc_vars` object is now defined — type `mc_vars` in console, should return object with `cart_url`, `ajax_url`, `nonce`, `whatsapp`, `currency_symbol`
+4. **Mobile pinch-to-zoom:** Open site on mobile or DevTools mobile emulator → verify pinch-to-zoom works on homepage and product pages
+5. **Visual regression check:** Homepage, shop, cart, checkout — verify nothing looks different from before
+6. **Prescription upload flow (if testable):** If `?rx_status=success` is triggered, verify toast appears correctly instead of JS error
+
+**Awaiting Phase 1B approval.**
