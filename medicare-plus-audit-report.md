@@ -426,3 +426,87 @@ Inside `astra.zip` — confirmed state:
 6. **Prescription upload flow (if testable):** If `?rx_status=success` is triggered, verify toast appears correctly instead of JS error
 
 **Awaiting Phase 1B approval.**
+
+---
+
+# PHASE 1B — COMPLETED
+**Commit:** `fix-phase-1b-content-cleanup`  
+**Commit SHA:** `2f64d75613ddc3b0466922c3401355c3bdfea6ae`  
+**Date:** 2026-09-05  
+**Status:** ✅ Merged to main — awaiting live site verification
+
+## Changes Made
+
+### ✅ C2 — License badge conditional (`footer.php:541-545`)
+- **Before:** Fake default `Drug Lic No: DL/DRG/000123 | FSSAI: 12345678901234` always displayed
+- **After:** Badge only renders when `mcp_footer_license` option is explicitly set and non-empty
+- **Risk:** Zero — display-only change; no PHP/WC/cart logic
+
+### ✅ C3 — App store buttons conditional (`footer.php:564-587`)
+- **Before:** Both buttons always shown with `href="#"` (dead links)
+- **After:** Entire app download section hidden when both URLs are empty or `#`. Individual buttons show only when their URL is a real value.
+- **Risk:** Zero — display-only change
+
+### ✅ C4 — Fake countdown removed (`template-medicare-homepage-safe.php`)
+- Removed: `<!-- COUNTDOWN BANNER STRIP -->` HTML block (flash-strip div with timerH/M/S)
+- Removed: `let timerValue` + `setInterval` countdown JS
+- Removed: Orphaned CSS rules (`.flash-strip`, `.fs-text`, `.fs-title`, `.fs-sub`, `.flash-timer`, `.ft-block`, `.ft-sep`)
+- **Risk:** Low — self-contained; no other code referenced these elements
+
+### ✅ C5 — Fake live order popups removed (`template-medicare-homepage-safe.php`)
+- Removed: `localOrders` array, `liveIdx`, `showLiveOrderPopup()` function
+- Removed: `setTimeout` block that fired welcome toast + `setInterval(showLiveOrderPopup, 9000)`
+- Kept: `DOMContentLoaded` handler with all real `mcRenderSliderCollection` calls and `mcRefreshCartStateUI()` intact
+- **Risk:** Low — fake UI only; real render logic preserved
+
+### ✅ C6 — Fake rating fallbacks removed (`template-medicare-homepage-safe.php`)
+- **PHP:** `?: 4.5` and `?: '24'` fallbacks removed; real WC values used directly
+- **JS renderer:** Stars block now conditional — only renders when `p.reviews > 0`
+- **Risk:** Low — products with 0 reviews now correctly show no stars
+
+## Files Changed
+| File | Changes |
+|---|---|
+| `footer.php` | License conditional; app store conditional |
+| `template-medicare-homepage-safe.php` | Countdown HTML+CSS+JS removed; live orders removed; fake rating fallbacks removed; star renderer conditional |
+
+## Files NOT Touched
+`functions.php`, `header.php`, `style.css`, all Astra core files — unchanged
+
+## Updated Bug Status
+| Bug ID | Status |
+|---|---|
+| C2 — Fake license always shown | ✅ FIXED |
+| C3 — App store dead links always shown | ✅ FIXED |
+| C4 — Fake countdown | ✅ FIXED |
+| C5 — Fake live order popups | ✅ FIXED |
+| C6 — Fake ratings/reviews | ✅ FIXED |
+
+## Tests for Live Site
+1. **Footer:** License badge should not appear (no option set in DB)
+2. **Footer:** App store buttons should not appear (no URLs set in DB)
+3. **Homepage:** No countdown banner/strip visible
+4. **Homepage:** No "Welcome! Live store..." toast on load
+5. **Homepage:** No fake order popup toasts ("Zeeshan A. from Peshawar...")
+6. **Product cards:** Products with 0 reviews should show no stars; products with real reviews should show star block
+7. **Visual check:** Homepage layout intact — categories, product sliders, cart drawer all working as before
+
+## Still Pending (Require Separate Approval)
+| ID | Item |
+|---|---|
+| P0-2 | Cart system fake — WC never touched |
+| P0-3 | Header cart dead stub |
+| P0-4 | Prescription upload UI fake |
+| P0-5 | `mc_ajax_place_order` no stock validation |
+| P1-2 | `mcp_live_search` handler missing |
+| P1-3 | `mcp_newsletter_subscribe` handler missing |
+| P1-4 | `mcpOpenAuth()` stub |
+| P1-5 | `mcpOpenRx()` stub |
+| P1-6 | `mcpAjax` object not localized |
+| P1-7 | `mc_*` vs `mcp_*` option prefix mismatch |
+| C7 | Indian defaults in footer/functions.php |
+| Phase 2 | Child theme migration |
+| Phase 3 | Real WooCommerce cart |
+| Phase 4-9 | Order handler, Rx, search, performance, design, a11y |
+
+**Awaiting next phase approval.**
